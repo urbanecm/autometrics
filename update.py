@@ -203,6 +203,8 @@ if totalabssum > 0:
 metrics_text += '\n'
 
 for project in projects:
+	if metrics[project]['edits'] == 0:
+		continue
 	interwiki = projects[project]
 	metrics_text += "** na [[:%s|%s]]: %s %s – v tom %s (=%s + %s)\n" % (interwiki, project, morph(metrics[project]['edits'], 'editace-6 provedená-6'), morph(metrics[project]['editing_editors'], 'uživatel-7'), morph(metrics[project]['edited_pages'], 'editovaný článek'), morph(metrics[project]['new_pages'], 'nově založený'), morph(metrics[project]['edited_pages']-metrics[project]['new_pages'], 'stávající'))
 
