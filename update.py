@@ -65,8 +65,6 @@ inspos = insre.search(text, pos).end()
 print('Time', utcstamp)
 print('Users', users)
 
-projects = {'cswiki': 'w'}
-
 metrics = {}
 for project in projects:
 	if project == 'commonswiki':
