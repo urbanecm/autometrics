@@ -159,4 +159,30 @@ for project in projects:
 	metrics[project]['creating_users'] = len([x[4] for x in data])
 
 	print(metrics)
-	break
+
+# this function takes a word (e.g. noun or adjective) in its base form, along with a number, and returns the form of the word appropriate for the number:
+def morph(num, words, prepend = True, prependbold = True):
+	morphwords = []
+	for word in words.split():
+		morphwords.append({
+			u'zúčastněný': lambda x: u'zúčastněný' if x == 1 else (u'zúčastnění' if 2 <= x <= 4 else u'zúčastněných'),
+			u'editor': lambda x: u'editor' if x == 1 else (u'editoři' if 2 <= x <= 4 else u'editorů'),
+			u'aktivní': lambda x: u'aktivní' if 1 <= x <= 4 else u'aktivních',
+			u'nově': lambda x: u'nově',
+			u'registrovaný': lambda x: u'registrovaný' if x == 1 else (u'registrovaní' if 2 <= x <= 4 else u'registrovaných'),
+			u'byte': lambda x: u'byte' if x == 1 else (u'byty' if 2 <= x <= 4 else u'bytů'),
+			u'přidaný': lambda x: u'přidaný' if x == 1 else (u'přidané' if 2 <= x <= 4 else u'přidaných'),
+			u'odebraný': lambda x: u'odebraný' if x == 1 else (u'odebrané' if 2 <= x <= 4 else u'odebraných'),
+			u'editace-6': lambda x: u'editaci' if x == 1 else u'editacích',
+			u'provedená-6': lambda x: u'provedené' if x == 1 else u'provedených',
+			u'uživatel-7': lambda x: u'uživatelem' if x == 1 else u'uživateli',
+			u'editace': lambda x: u'editace' if 1 <= x <= 4 else u'editací',
+			u'provedená': lambda x: u'provedená' if x == 1 else (u'provedené' if 2 <= x <= 4 else u'provedených'),
+			u'editovaný': lambda x: u'editovaný' if x == 1 else (u'editované' if 2 <= x <= 4 else u'editovaných'),
+			u'článek': lambda x: u'článek' if x == 1 else (u'články' if 2 <= x <= 4 else u'článků'),
+			u'založený': lambda x: u'založený' if x == 1 else (u'založené' if 2 <= x <= 4 else u'založených'),
+			u'stávající': lambda x: u'stávající' if 1 <= x <= 4 else u'stávajících',
+			u'soubor': lambda x: u'soubor' if x == 1 else (u'soubory' if 2 <= x <= 4 else u'souborů'),
+			u'nahraný': lambda x: u'nahraný' if x == 1 else (u'nahrané' if 2 <= x <= 4 else u'nahraných'),
+		}[word](num))
+	return ('' if not prepend else ''.join([u"'''" if prependbold else '', u"{{subst:formatnum:%d}}" % num, u"'''" if prependbold else '', u' '])) + ' '.join(morphwords)
