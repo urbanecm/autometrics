@@ -186,3 +186,32 @@ def morph(num, words, prepend = True, prependbold = True):
 			u'nahraný': lambda x: u'nahraný' if x == 1 else (u'nahrané' if 2 <= x <= 4 else u'nahraných'),
 		}[word](num))
 	return ('' if not prepend else ''.join([u"'''" if prependbold else '', u"{{subst:formatnum:%d}}" % num, u"'''" if prependbold else '', u' '])) + ' '.join(morphwords)
+
+metrics_text = "\n"
+
+activeusers = sum([metrics[x]['activeeditors'] for x in metrics])
+newusers = sum([metrics[x]['newusers'] for x in metrics])
+metrics_text += "* %s (v tom %s a %s)\n" % (morph(len(users), 'zúčastněný editor'), morph(activeusers, 'aktivní'), morph(newusers, 'nově registrovaný'))
+
+totalabssum = sum([metrics[x]['absolute_sum'] for x in metrics])
+totalpossum = sum([metrics[x]['positive_sum'] for x in metrics])
+totalnegsum = sum([metrics[x]['negative_sum'] for x in metrics])
+totaledits = sum([metrics[x]['edits'] for x in metrics])
+totaleditingeditors = sum([metrics[x]['editing_editors'] for x in metrics])
+metrics_text += "* %s součet změn (=%s + %s) v %s %s" % (morph(totalabssum, 'byte'), morph(totalpossum, 'přidaný'), morph(totalnegsum, 'odebraný'), morph(totaledits, 'editace-6 provedená-6'), morph(totaleditingeditors, 'uživatel-7'))
+
+if totalabssum > 0:
+	metrics_text += ', a to:'
+metrics_text += '\n'
+
+for project in projects:
+	interwiki = projects[project]
+	metrics_text += "** na [[:%s|%s]]: %s %s – v tom %s (=%s + %s)\n" % (interwiki, project, morph(metrics[project]['edits'], 'editace-6 provedená-6'), morph(metrics[project]['editing_editors'], 'uživatel-7'), morph(metrics[project]['edited_pages'], 'editovaný článek'), morph(metrics[project]['new_pages'], 'nově založený'), morph(metrics[project]['edited_pages']-metrics[project]['new_pages'], 'stávající'))
+
+newtext = text[:inspos] + metrics_text.rstrip("\n") + text[inspos:]
+
+print('Generated report:')
+pywikibot.showDiff(text, newtext)
+
+print('Saving...')
+page.put(newtext, 'automaticky generované metriky za den %s' % date, minorEdit=False)
