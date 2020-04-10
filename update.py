@@ -156,7 +156,28 @@ for project in projects:
 	metrics[project]['new_pages'] = sum([x[4] for x in data])
 	metrics[project]['creating_users'] = len([x[4] for x in data])
 
-	print(metrics)
+# process commonswiki
+if 'commonswiki' in projects:
+	conn = toolforge.connect('commonswiki')
+	metrics['commonswiki'] = {}
+	with conn.cursor() as cur:
+		q = '''
+		SELECT actor_name, COUNT(*)
+		FROM revision
+		JOIN actor_revision ON actor_id=rev_actor
+		JOIN page on page_id=rev_page
+		WHERE actor_name IN (%s) AND
+		page_namespace = 6 AND
+		rev_parent_id = 0 AND
+		revision.rev_timestamp BETWEEN %%s AND %%s
+		GROUP BY rev_actor;
+		''' % users_fmt_str
+		cur.execute(q, tuple(users) + tuple(utcstamp))
+		data = cur.fetchall()
+	metrics['commonswiki']['files_uploaded'] = sum([x[1] for x in data])
+	metrics['commonswiki']['files_users'] = len(data)
+
+print(metrics)
 
 # this function takes a word (e.g. noun or adjective) in its base form, along with a number, and returns the form of the word appropriate for the number:
 def morph(num, words, prepend = True, prependbold = True):
@@ -203,10 +224,14 @@ if totalabssum > 0:
 metrics_text += '\n'
 
 for project in projects:
-	if metrics[project]['edits'] == 0:
+	if metrics[project]['edits'] == 0 or project == 'commonswiki':
 		continue
 	interwiki = projects[project]
 	metrics_text += "** na [[:%s|%s]]: %s %s – v tom %s (=%s + %s)\n" % (interwiki, project, morph(metrics[project]['edits'], 'editace-6 provedená-6'), morph(metrics[project]['editing_editors'], 'uživatel-7'), morph(metrics[project]['edited_pages'], 'editovaný článek'), morph(metrics[project]['new_pages'], 'nově založený'), morph(metrics[project]['edited_pages']-metrics[project]['new_pages'], 'stávající'))
+
+# special handling for commonswiki
+if 'commonswiki' in projects and metrics['commonswiki']['files_uploaded'] > 0:
+	metrics_text += "** na [[:c:|commonswiki]]: %s %s" % (morph(metrics['commonswiki']['files_uploaded'], 'soubor nahraný'), morph(metrics['commonswiki']['files_users'], 'uživatel-7'))
 
 newtext = text[:inspos] + metrics_text.rstrip("\n") + text[inspos:]
 
