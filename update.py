@@ -108,7 +108,9 @@ for project in projects:
 		SELECT COUNT(DISTINCT rev_actor), COUNT(DISTINCT rev_page), COUNT(*)
 		FROM revision
 		JOIN actor_revision ON actor_id=rev_actor
+		JOIN page ON rev_page=page_id
 		WHERE actor_name IN (%s) AND
+		page_namespace=0 AND
 		rev_timestamp BETWEEN %%s AND %%s
 		''' % users_fmt_str
 		cur.execute(q, tuple(users) + (utcstamp[0], utcstamp[1]))
@@ -142,8 +144,10 @@ for project in projects:
 				revision.rev_parent_id=0 AS is_new
 			FROM revision
 			JOIN actor_revision ON actor_id=revision.rev_actor
+			JOIN page on page_id=revision.rev_page
 			LEFT JOIN revision AS old_revision ON old_revision.rev_id=revision.rev_parent_id
 			WHERE actor_name IN (%s) AND
+			page_namespace = 0 AND
 			revision.rev_timestamp BETWEEN %%s AND %%s
 		)	AS anon_1 GROUP BY rev_actor;
 		''' % users_fmt_str
