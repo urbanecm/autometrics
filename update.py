@@ -79,8 +79,11 @@ for project in projects:
 		params = tuple(users) + (utcstamp[0], utcstamp[0])
 		q = '''
 		SELECT actor_name
-		FROM actor_revision JOIN revision ON rev_actor=actor_id
+		FROM actor_revision
+		JOIN revision ON rev_actor=actor_id
+		JOIN page ON rev_page=page_id
 		WHERE actor_name IN (%s) AND
+		page_namespace=0 AND
 		rev_timestamp BETWEEN DATE_FORMAT(%%s - INTERVAL 30 DAY, '%%%%Y%%%%m%%%%d%%%%H%%%%i00') AND %%s
 		GROUP BY actor_id
 		HAVING COUNT(*) > 5
@@ -125,6 +128,7 @@ for project in projects:
 		SELECT
 			rev_actor,
 			SUM(ABS(byte_change)) AS absolute_sum,
+			SUM(byte_change) AS net_sum,
 			SUM(CASE
 				WHEN (byte_change>0)
 				THEN byte_change
@@ -155,10 +159,11 @@ for project in projects:
 		data = cur.fetchall()
 	metrics[project]['editingeditors'] = len(data)
 	metrics[project]['absolute_sum'] = sum([x[1] for x in data])
-	metrics[project]['positive_sum'] = sum([x[2] for x in data])
-	metrics[project]['negative_sum'] = sum([x[3] for x in data])
-	metrics[project]['new_pages'] = sum([x[4] for x in data])
-	metrics[project]['creating_users'] = len([x[4] for x in data])
+	metrics[project]['net_sum'] = sum([x[2] for x in data])
+	metrics[project]['positive_sum'] = sum([x[3] for x in data])
+	metrics[project]['negative_sum'] = sum([x[4] for x in data])
+	metrics[project]['new_pages'] = sum([x[5] for x in data])
+	metrics[project]['creating_users'] = len([x[5] for x in data])
 
 # process commonswiki
 if 'commonswiki' in projects:
@@ -217,11 +222,12 @@ newusers = sum([metrics[x]['newusers'] for x in metrics])
 metrics_text += "* %s (v tom %s a %s)\n" % (morph(len(users), 'zúčastněný editor'), morph(activeusers, 'aktivní'), morph(newusers, 'nově registrovaný'))
 
 totalabssum = sum([metrics[x]['absolute_sum'] for x in metrics])
+totalnetsum = sum([metrics[x]['net_sum'] for x in metrics])
 totalpossum = sum([metrics[x]['positive_sum'] for x in metrics])
 totalnegsum = sum([metrics[x]['negative_sum'] for x in metrics])
 totaledits = sum([metrics[x]['edits'] for x in metrics])
 totaleditingeditors = sum([metrics[x]['editing_editors'] for x in metrics])
-metrics_text += "* %s součet změn (=%s + %s) v %s %s" % (morph(totalabssum, 'byte'), morph(totalpossum, 'přidaný'), morph(totalnegsum, 'odebraný'), morph(totaledits, 'editace-6 provedená-6'), morph(totaleditingeditors, 'uživatel-7'))
+metrics_text += "* %s {{Popisek|absolutní součet změn|absolute sum}}, %s {{Popisek|prostý součet změn|net sum}} (=%s + %s) v %s %s" % (morph(totalabssum, 'byte'), morph(totalnetsum, 'byte'), morph(totalpossum, 'přidaný'), morph(totalnegsum, 'odebraný'), morph(totaledits, 'editace-6 provedená-6'), morph(totaleditingeditors, 'uživatel-7'))
 
 if totalabssum > 0:
 	metrics_text += ', a to:'
